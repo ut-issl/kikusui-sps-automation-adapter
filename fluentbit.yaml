@@ -1,0 +1,29 @@
+service:
+  flush: 1
+  daemon: false
+  log_level: info
+
+parsers:
+  - name: json_iso8601
+    format: json
+    time_key: time
+    time_format: "%Y-%m-%dT%H:%M:%S.%L%z"
+
+pipeline:
+  inputs:
+    - name: tail
+      path: ./logs/*.jsonl
+      tag: power-supply
+      parser: json_iso8601
+      skip_long_lines: true
+      path_key: file
+
+  outputs:
+    - name: influxdb
+      match: "*"
+      host: 10.8.143.201
+      port: 8087
+      org: ut-issl
+      bucket: logger
+      http_token: "ogIINlpRGfb0ailWf1dFelIG2hF89KGa8EykmGOFPJvvNZGbSmOwDWean9JjZqhVfCvCxnDeH21Ltc_YwpHaLQ=="
+      tag_keys: "file"
