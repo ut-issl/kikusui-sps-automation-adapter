@@ -1,10 +1,10 @@
 # Kikusui SPS Automation Adapter
 
-菊水電源装置からデータを取得し、[fluentbit](https://fluentbit.io/)を通して[influxDB](https://www.influxdata.com/)に格納するRustアプリケーションです。TCP接続を通じて電源装置と通信し、電圧と電流などの測定値をリアルタイムで取得・記録します。
+菊水電子工業株式会社の電源装置からデータを取得し、[fluentbit](https://fluentbit.io/)を通して[influxDB](https://www.influxdata.com/)に格納するRustアプリケーションです。TCP接続を通じて電源装置と通信し、電圧と電流などの測定値をリアルタイムで取得・記録します。
 
 ## 要件
 
-- 菊水電源装置（TCP/IP接続対応）
+- 菊水電子工業株式会社の電源装置（TCP/IP接続対応）
     - 動作確認済み機種：**PMX35-3A**
 - Rust 1.70以上
 - [fluentbit](https://fluentbit.io/)
