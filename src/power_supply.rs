@@ -142,6 +142,34 @@ impl PowerSupply {
         })
     }
 
+    /// 電圧設定値をセット
+    pub fn set_voltage(&mut self, v: f64) -> Result<(), PowerSupplyError> {
+        let cmd = format!("VOLT {:.4}\r\n", v);
+        self.stream.write_all(cmd.as_bytes())?;
+        Ok(())
+    }
+
+    /// 電流制限値をセット
+    pub fn set_current(&mut self, a: f64) -> Result<(), PowerSupplyError> {
+        let cmd = format!("CURR {:.4}\r\n", a);
+        self.stream.write_all(cmd.as_bytes())?;
+        Ok(())
+    }
+
+    /// OVP（過電圧保護）設定値をセット
+    pub fn set_ov(&mut self, v: f64) -> Result<(), PowerSupplyError> {
+        let cmd = format!("VOLT:PROT {:.4}\r\n", v);
+        self.stream.write_all(cmd.as_bytes())?;
+        Ok(())
+    }
+
+    /// OCP（過電流保護）設定値をセット
+    pub fn set_oc(&mut self, a: f64) -> Result<(), PowerSupplyError> {
+        let cmd = format!("CURR:PROT {:.4}\r\n", a);
+        self.stream.write_all(cmd.as_bytes())?;
+        Ok(())
+    }
+
     /// デバイスIDを取得
     pub fn get_device_id(&self) -> &str {
         &self.device_id
