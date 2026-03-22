@@ -1,10 +1,24 @@
 [package]
-name = "power_test"
+name = "kikusui-sps-adapter"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+
+[lib]
+name = "kikusui_sps_adapter"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kikusui-sps-cli"
+path = "src/main.rs"
+required-features = ["cli"]
 
 [dependencies]
-clap = { version = "4.5.46", features = ["derive"] }
-serde = { version = "1.0.219", features = ["derive"] }
-chrono = "0.4.41"
-serde_json = "1.0.143"
+serde = { version = "1.0", features = ["derive"] }
+chrono = { version = "0.4", features = ["serde"] }
+serde_json = "1.0"
+
+# CLI tool用の依存関係（binのみ）
+clap = { version = "4.5", features = ["derive"], optional = true }
+
+[features]
+cli = ["clap"]

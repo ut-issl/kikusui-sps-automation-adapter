@@ -104,6 +104,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link",
 ]
@@ -213,6 +214,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "kikusui-sps-adapter"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.175"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -250,16 +261,6 @@ name = "once_cell_polyfill"
 version = "1.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4895175b425cb1f87721b59f0f286c2092bd4af812243672510e1ac53e2e0ad"
-
-[[package]]
-name = "power_test"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "clap",
- "serde",
- "serde_json",
-]
 
 [[package]]
 name = "proc-macro2"
