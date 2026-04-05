@@ -157,6 +157,30 @@ impl PowerSupply {
         self.query_f64(b"CURR:PROT?\r\n")
     }
 
+    /// OVP（過電圧保護）がトリップしているか確認（true: トリップ中）
+    pub fn is_ov_tripped(&mut self) -> Result<bool, PowerSupplyError> {
+        let v = self.query_f64(b"VOLT:PROT:TRIP?\r\n")?;
+        Ok(v != 0.0)
+    }
+
+    /// OCP（過電流保護）がトリップしているか確認（true: トリップ中）
+    pub fn is_oc_tripped(&mut self) -> Result<bool, PowerSupplyError> {
+        let v = self.query_f64(b"CURR:PROT:TRIP?\r\n")?;
+        Ok(v != 0.0)
+    }
+
+    /// OVP（過電圧保護）トリップ状態をクリア
+    pub fn clear_ov(&mut self) -> Result<(), PowerSupplyError> {
+        self.stream.write_all(b"VOLT:PROT:CLE\r\n")?;
+        Ok(())
+    }
+
+    /// OCP（過電流保護）トリップ状態をクリア
+    pub fn clear_oc(&mut self) -> Result<(), PowerSupplyError> {
+        self.stream.write_all(b"CURR:PROT:CLE\r\n")?;
+        Ok(())
+    }
+
     /// 出力状態を取得（true: ON, false: OFF）
     pub fn get_output_state(&mut self) -> Result<bool, PowerSupplyError> {
         let v = self.query_f64(b"OUTP?\r\n")?;
@@ -275,6 +299,38 @@ mod tests {
         let a = psu.get_oc().expect("get_oc failed");
         println!("OCP設定値: {} A", a);
         assert!((a - set_oc).abs() < 0.001, "OCP設定値が一致しない: {}", a);
+    }
+
+    #[test]
+    fn test_hw_is_ov_tripped() {
+        let mut psu = connect();
+        let tripped = psu.is_ov_tripped().expect("is_ov_tripped failed");
+        println!("OVPトリップ状態: {}", tripped);
+    }
+
+    #[test]
+    fn test_hw_is_oc_tripped() {
+        let mut psu = connect();
+        let tripped = psu.is_oc_tripped().expect("is_oc_tripped failed");
+        println!("OCPトリップ状態: {}", tripped);
+    }
+
+    #[test]
+    fn test_hw_clear_ov() {
+        let mut psu = connect();
+        psu.clear_ov().expect("clear_ov failed");
+        let tripped = psu.is_ov_tripped().expect("is_ov_tripped failed");
+        println!("OVPクリア後トリップ状態: {}", tripped);
+        assert!(!tripped, "clear_ov後もOVPがトリップしたまま");
+    }
+
+    #[test]
+    fn test_hw_clear_oc() {
+        let mut psu = connect();
+        psu.clear_oc().expect("clear_oc failed");
+        let tripped = psu.is_oc_tripped().expect("is_oc_tripped failed");
+        println!("OCPクリア後トリップ状態: {}", tripped);
+        assert!(!tripped, "clear_oc後もOCPがトリップしたまま");
     }
 
 }

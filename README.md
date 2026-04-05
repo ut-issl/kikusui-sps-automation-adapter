@@ -7,7 +7,7 @@
 - TCP/IP経由での電源接続
 - 出力ON/OFF制御
 - 電圧・電流の設定・読み取り
-- OVP（過電圧保護）・OCP（過電流保護）の設定・読み取り
+- OVP（過電圧保護）・OCP（過電流保護）の設定・読み取り・トリップ確認・クリア
 - 電圧・電流の測定
 - エラーハンドリング
 
@@ -68,6 +68,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `get_set_current()` | 電流制限値を読み取り [A] |
 | `get_ov()` | OVP設定値を読み取り [V] |
 | `get_oc()` | OCP設定値を読み取り [A] |
+| `is_ov_tripped()` | OVPがトリップ中か確認（`true`: トリップ中） |
+| `is_oc_tripped()` | OCPがトリップ中か確認（`true`: トリップ中） |
+| `clear_ov()` | OVPトリップ状態をクリア |
+| `clear_oc()` | OCPトリップ状態をクリア |
 | `measure_voltage()` | 電圧を測定 [V] |
 | `measure_current()` | 電流を測定 [A] |
 | `get_id()` | 識別IDを取得 |
