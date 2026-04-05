@@ -6,4 +6,3 @@ pub mod power_supply;
 
 pub use power_supply::PowerSupply;
 pub use power_supply::PowerSupplyError;
-pub use power_supply::Measurement;

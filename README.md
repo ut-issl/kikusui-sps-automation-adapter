@@ -37,11 +37,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 出力をON
     psu.output_on()?;
 
-    // 電圧と電流を測定
-    let m = psu.measure()?;
-    println!("電圧: {} V", m.voltage);
-    println!("電流: {} A", m.current);
-    println!("時刻: {}", m.timestamp);
+    // 電圧・電流を測定
+    let v = psu.measure_voltage()?;
+    let a = psu.measure_current()?;
+    println!("電圧: {} V", v);
+    println!("電流: {} A", a);
 
     // 出力をOFF
     psu.output_off()?;
@@ -59,6 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `new(id, host, port)` | 接続を確立し、デバイスIDを取得 |
 | `output_on()` | 出力ON |
 | `output_off()` | 出力OFF |
+| `get_output_state()` | 出力状態を取得（`true`: ON, `false`: OFF） |
 | `set_voltage(v)` | 電圧設定値をセット [V] |
 | `set_current(a)` | 電流制限値をセット [A] |
 | `set_ov(v)` | OVP設定値をセット [V] |
@@ -69,21 +70,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `get_oc()` | OCP設定値を読み取り [A] |
 | `measure_voltage()` | 電圧を測定 [V] |
 | `measure_current()` | 電流を測定 [A] |
-| `measure()` | 電圧・電流を測定して `Measurement` を返す |
 | `get_id()` | 識別IDを取得 |
 | `get_device_id()` | デバイスID文字列を取得 |
-
-### `Measurement`
-
-```rust
-pub struct Measurement {
-    pub voltage: f64,      // 電圧 [V]
-    pub current: f64,      // 電流 [A]
-    pub timestamp: String, // ISO 8601形式のタイムスタンプ
-}
-```
-
-`serde` によるシリアライズ・デシリアライズに対応しています。
 
 ### `PowerSupplyError`
 

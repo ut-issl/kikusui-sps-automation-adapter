@@ -1,18 +1,6 @@
-use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::time::Duration;
-
-/// 電源の測定値
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Measurement {
-    /// 電圧 [V]
-    pub voltage: f64,
-    /// 電流 [A]
-    pub current: f64,
-    /// タイムスタンプ (ISO 8601形式)
-    pub timestamp: String,
-}
 
 /// 電源制御エラー
 #[derive(Debug)]
@@ -121,21 +109,6 @@ impl PowerSupply {
         self.query_f64(b"MEAS:CURR?\r\n")
     }
 
-    /// 電圧と電流を測定
-    pub fn measure(&mut self) -> Result<Measurement, PowerSupplyError> {
-        use chrono::{Utc, SecondsFormat};
-
-        let voltage = self.measure_voltage()?;
-        let current = self.measure_current()?;
-        let timestamp = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
-
-        Ok(Measurement {
-            voltage,
-            current,
-            timestamp,
-        })
-    }
-
     /// 電圧設定値をセット
     pub fn set_voltage(&mut self, v: f64) -> Result<(), PowerSupplyError> {
         let cmd = format!("VOLT {:.4}\r\n", v);
@@ -184,6 +157,12 @@ impl PowerSupply {
         self.query_f64(b"CURR:PROT?\r\n")
     }
 
+    /// 出力状態を取得（true: ON, false: OFF）
+    pub fn get_output_state(&mut self) -> Result<bool, PowerSupplyError> {
+        let v = self.query_f64(b"OUTP?\r\n")?;
+        Ok(v != 0.0)
+    }
+
     /// デバイスIDを取得
     pub fn get_device_id(&self) -> &str {
         &self.device_id
@@ -228,6 +207,23 @@ mod tests {
     }
 
     #[test]
+    fn test_hw_get_output_state() {
+        let mut psu = connect();
+
+        psu.output_on().expect("output_on failed");
+        std::thread::sleep(std::time::Duration::from_millis(2000));
+        let state = psu.get_output_state().expect("get_output_state failed");
+        println!("出力状態（ON後）: {}", state);
+        assert!(state, "output_on後にOFFが返った");
+
+        psu.output_off().expect("output_off failed");
+        std::thread::sleep(std::time::Duration::from_millis(2000));
+        let state = psu.get_output_state().expect("get_output_state failed");
+        println!("出力状態（OFF後）: {}", state);
+        assert!(!state, "output_off後にONが返った");
+    }
+
+    #[test]
     fn test_hw_measure_voltage() {
         let mut psu = connect();
         let v = psu.measure_voltage().expect("measure_voltage failed");
@@ -239,15 +235,6 @@ mod tests {
         let mut psu = connect();
         let a = psu.measure_current().expect("measure_current failed");
         println!("電流: {} A", a);
-    }
-
-    #[test]
-    fn test_hw_measure_voltage_and_current() {
-        let mut psu = connect();
-        let m = psu.measure().expect("measure failed");
-        println!("測定値: {}V / {}A @ {}", m.voltage, m.current, m.timestamp);
-        // ISO 8601 形式か確認
-        assert!(m.timestamp.contains('T'));
     }
 
     #[test]
