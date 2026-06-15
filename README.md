@@ -1,77 +1,87 @@
-# Kikusui SPS Automation Adapter
+# kikusui-sps-adapter
 
-菊水電子工業株式会社の電源装置からデータを取得し、[fluentbit](https://fluentbit.io/)を通して[influxDB](https://www.influxdata.com/)に格納するRustアプリケーションです。TCP接続を通じて電源装置と通信し、電圧と電流などの測定値をリアルタイムで取得・記録します。
+菊水電子工業のSPSシリーズ安定化電源をTCP/IP経由で制御するRustライブラリ
 
-## 要件
+## 機能
 
-- 菊水電子工業株式会社の電源装置（TCP/IP接続対応）
-    - 動作確認済み機種：**PMX35-3A**
-- Rust 1.70以上
-- [fluentbit](https://fluentbit.io/)
-- [influxDB](https://www.influxdata.com/)
+- TCP/IP経由での電源接続
+- 出力ON/OFF制御
+- 電圧・電流の設定・読み取り
+- OVP（過電圧保護）・OCP（過電流保護）の設定・読み取り・トリップ確認・クリア
+- 電圧・電流の測定
+- エラーハンドリング
 
-## インストール
+## 使い方
 
-```bash
-git clone https://github.com/ut-issl/kikusui-sps-automation-adapter.git
-cd kikusui-sps-automation-adapter
-cargo build
+本ライブラリを`Cargo.toml` に追加:
+
+```toml
+[dependencies]
+kikusui-sps-adapter = { git = "https://github.com/ut-issl/kikusui-sps-automation-adapter", rev = "コミットハッシュ" }
 ```
 
-## 使用方法
+```rust
+use kikusui_sps_adapter::PowerSupply;
 
-### 1. 記録スクリプトを実行
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 電源に接続（接続時に *IDN? を送信してデバイスIDを取得）
+    let mut psu = PowerSupply::new("PSU1", "192.168.1.100", 8462)?;
+    println!("接続先: {}", psu.get_device_id());
 
-```bash
-cargo run -- --host <HOST_IP> --port <PORT>
+    // 電圧・電流・保護値を設定
+    psu.set_voltage(5.0)?;
+    psu.set_current(1.0)?;
+    psu.set_ov(6.0)?;
+    psu.set_oc(1.5)?;
+
+    // 出力をON
+    psu.output_on()?;
+
+    // 電圧・電流を測定
+    let v = psu.measure_voltage()?;
+    let a = psu.measure_current()?;
+    println!("電圧: {} V", v);
+    println!("電流: {} A", a);
+
+    // 出力をOFF
+    psu.output_off()?;
+
+    Ok(())
+}
 ```
 
-#### オプション
+## API
 
-- `--host <HOST_IP>`: 電源装置のIPアドレス（必須）
-- `--port <PORT>`: 電源装置のポート番号（必須）
-- `--freq <FREQUENCY>`: 測定頻度（Hz）（デフォルト: 1.0）
-- `--log-file <NAME>`: ログファイル名（オプション、デフォルトはタイムスタンプ）
+### `PowerSupply`
 
-#### 実行例
+| メソッド | 説明 |
+|---|---|
+| `new(id, host, port)` | 接続を確立し、デバイスIDを取得 |
+| `output_on()` | 出力ON |
+| `output_off()` | 出力OFF |
+| `get_output_state()` | 出力状態を取得（`true`: ON, `false`: OFF） |
+| `set_voltage(v)` | 電圧設定値をセット [V] |
+| `set_current(a)` | 電流制限値をセット [A] |
+| `set_ov(v)` | OVP設定値をセット [V] |
+| `set_oc(a)` | OCP設定値をセット [A] |
+| `get_set_voltage()` | 電圧設定値を読み取り [V] |
+| `get_set_current()` | 電流制限値を読み取り [A] |
+| `get_ov()` | OVP設定値を読み取り [V] |
+| `get_oc()` | OCP設定値を読み取り [A] |
+| `is_ov_tripped()` | OVPがトリップ中か確認（`true`: トリップ中） |
+| `is_oc_tripped()` | OCPがトリップ中か確認（`true`: トリップ中） |
+| `clear_ov()` | OVPトリップ状態をクリア |
+| `clear_oc()` | OCPトリップ状態をクリア |
+| `measure_voltage()` | 電圧を測定 [V] |
+| `measure_current()` | 電流を測定 [A] |
+| `get_id()` | 識別IDを取得 |
+| `get_device_id()` | デバイスID文字列を取得 |
 
-```bash
-# 基本的な実行（1Hzで測定）
-cargo run -- --host 192.168.1.100 --port 10001
+### `PowerSupplyError`
 
-# 10Hzで測定
-cargo run -- --host 192.168.1.100 --port 10001 --freq 10.0
-
-# カスタムログファイル名を指定
-cargo run -- --host 192.168.1.100 --port 10001 --log-file experiment1
-```
-
-#### ログファイル
-
-測定データは`./logs/`ディレクトリに以下の形式で保存されます：
-
-- ファイル名: `<log_file>_<timestamp>.jsonl` または `<timestamp>.jsonl`
-- 形式: JSONL（JSON Lines）
-
-#### ログデータ形式
-
-```json
-{"time":"2025-09-09T12:00:00.000Z","voltage":5.0,"current":1.5}
-```
-
-- `time`: 測定時刻（ISO 8601形式）
-- `voltage`: 電圧値（V）
-- `current`: 電流値（A）
-
-## 2. Fluentbitの実行
-
-`fluentbit.yaml`内outputs配下の、host、port、http_tokenを記録先のinfluxDBが立ち上げられているPCの情報に書き換えてください。そのうえで`fluentbit.yaml`を設定ファイルとして、fluentbitサーバーを起動させます。
-
-```bash
-fluent-bit --config fluentbit.yaml
-```
-1で実行したスクリプトによりjsonlファイルが更新されるたびに、指定したinfluxDBにデータが格納されます。
-
-## ライセンス
-
-本プロジェクトのライセンス情報については、[LICENSE](LICENSE)ファイルを参照してください。
+| バリアント | 説明 |
+|---|---|
+| `ConnectionError(io::Error)` | TCP接続失敗 |
+| `CommunicationError(io::Error)` | 送受信エラー |
+| `ParseError(String)` | レスポンスのパース失敗 |
+| `Other(String)` | その他のエラー |
